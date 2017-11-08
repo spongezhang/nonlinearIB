@@ -72,7 +72,8 @@ else:
         return r
     
 class MICalculator(regularizers.Regularizer):
-    def __init__(self, beta, model_layers, same_batch=False, data=None, miN=1000, init_kde_logvar=-5.):
+    def __init__(self, beta, model_layers, same_batch=False, data=None, label=None, 
+            miN=1000, init_kde_logvar=-5.):
         # miN is the batch size used to compute MI estimates
         self.beta            = beta
         self.init_kde_logvar = init_kde_logvar
@@ -81,6 +82,7 @@ class MICalculator(regularizers.Regularizer):
         
         self.miN  = miN
         self.set_data(data)
+        self.label = label
             
         # this should be constructed *before* NoiseLayer is added
         for layer in self.model_layers:
@@ -105,11 +107,14 @@ class MICalculator(regularizers.Regularizer):
                 raise Exception("data attribute not initialized")
             if K._BACKEND == 'tensorflow':
                 import tensorflow as tf
-                c_input = tf.constant(self.data) 
+                c_input = tf.constant(self.data)
+                c_label = tf.constant(self.label)
             else:
                 c_input = K.variable(self.data)
+                c_label = K.variable(self.label)
             input_ndxs = K_n_choose_k(len(self.data), self.miN)
             noise_layer_input = K.gather(c_input, input_ndxs)
+            #sampled_label = K.gather(c_label, input_ndxs)
 
             for layerndx, layer in enumerate(self.model_layers):
                 noise_layer_input = layer.call(noise_layer_input)
@@ -127,6 +132,7 @@ class MICalculator(regularizers.Regularizer):
         # returns entropy
         current_var = K.exp(self.noise_logvar) + K.exp(self.kde_logvar)
         return kde_entropy(self.noise_layer_input(x), current_var)
+        #return kde_entropy_category(self.noise_layer_input(x), self.sampled_label, current_var)
 
     def get_hcond(self, x=None):
         # returns conditional entropy

@@ -18,7 +18,6 @@ def get_mnist(trainN=None, testN=None):
     X_test  = np.reshape(X_test , [X_test.shape[0] , -1]).astype('float32') / 255.
     X_train = X_train * 2.0 - 1.0
     X_test  = X_test  * 2.0 - 1.0
-
     if trainN is not None:
         X_train = X_train[0:trainN]
         y_train = y_train[0:trainN]

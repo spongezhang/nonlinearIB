@@ -31,6 +31,28 @@ def kde_entropy(output, var):
     
     return h
 
+def kde_entropy_category(output, label, var):
+    # Kernel density estimate of entropy, in nats
+
+    dims = K.cast(K.shape(output)[1], K.floatx() ) 
+    N    = K.cast(K.shape(output)[0], K.floatx() )
+    
+    normconst = (dims/2.0)*K.log(2*np.pi*var)
+     
+    # get dists matrix
+    x2 = K.expand_dims(K.sum(K.square(output), axis=1), 1)
+    label_matrix = K.expand_dims(label,1)
+    similarity_matrix = (label_matrix==K.transpose(label_matrix))
+    #similar_num = K.sum(K.sum(similarity_matrix))
+    dists = x2 + K.transpose(x2) - 2*K.dot(output, K.transpose(output))
+    dists = dists / (2*var)
+    category_dists = K.dot(similarity_matrix,dists)
+    
+    lprobs = logsumexp(-dists, axis=1) - K.log(N/10) - normconst
+    h = -K.mean(lprobs)
+    
+    return h
+
 def kde_condentropy(output, var):
     # Return entropy of a multivariate Gaussian, in nats
 

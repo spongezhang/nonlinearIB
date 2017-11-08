@@ -29,13 +29,13 @@ parser.add_argument('--batch_size', type=int, default=128, help='Mini-batch size
 parser.add_argument('--optimizer', choices=['sgd','rmsprop','adagrad','adam'], default='adam',
                     help='Which optimizer to use')
 parser.add_argument('--init_lr', type=float, default=0.001, help='Initial learning rate')
-parser.add_argument('--lr_decaysteps', type=int, default=10, help='Number of iterations before dropping learning rate')
+parser.add_argument('--lr_decaysteps', type=int, default=15, help='Number of iterations before dropping learning rate')
 parser.add_argument('--lr_decay', type=float, default=0.5, help='Learning rate decay rate (applied every lr_decaysteps)')
 parser.add_argument('--no_test_phase_noise', action='store_true', default=False, help='Disable noise during testing phase')
 
 parser.add_argument('--encoder', type=str, default='800-800-20', help='Encoder network architecture')
-parser.add_argument('--encoder_acts', type=str, default='relu-relu-relu', help='Encoder layer activations')
-parser.add_argument('--decoder', type=str, default='', help='Decoder network architecture')
+parser.add_argument('--encoder_acts', type=str, default='relu-relu-linear', help='Encoder layer activations')
+parser.add_argument('--decoder', type=str, default='800', help='Decoder network architecture')
 parser.add_argument('--predict_samples', type=int, default=1, help='No. of samples to measure accuracy at end of run')
 parser.add_argument('--epoch_report_mi', action='store_true', default=False, help='Report MI values every epoch?')
 parser.add_argument('--noise_logvar_nottrainable', action='store_true', default=False, help='Dont train noise variance')
@@ -92,7 +92,6 @@ reporter = reporting.Reporter(trn=trn, tst=tst, noiselayer=noiselayer, micalcula
                              on_epoch_report_mi=args.epoch_report_mi)
 cbs.append(reporter)
 
-
 def lrscheduler(epoch):
     lr = args.init_lr * args.lr_decay**np.floor(epoch / args.lr_decaysteps)
     #lr = max(lr, 1e-5)
@@ -115,17 +114,16 @@ fit_args = dict(
 model.compile(loss='categorical_crossentropy', optimizer=args.optimizer, metrics=['accuracy'])
 print(model.get_config())
 hist=None
-try:
-    r = model.fit(**fit_args)
-    hist = r.history
-    #print(hist)
-    for key, value_list in hist.iteritems():
-        for idx, value in enumerate(value_list):
-            logger.log_value(key, value, step = idx)
+#try:
+r = model.fit(**fit_args)
+hist = r.history
+#print(hist)
+for key, value_list in hist.iteritems():
+    for idx, value in enumerate(value_list):
+        logger.log_value(key, value, step = idx)
 
-except KeyboardInterrupt:
-    print("KeyboardInterrupt called")
-    
+#except KeyboardInterrupt:
+#    print("KeyboardInterrupt called")
 
 # Print and save results
 probs = 0.
@@ -145,13 +143,13 @@ for k, v in logs.items():
     print("%s=%s "%(k,v), sep="")
 print()
 
-sfx = '%s-%s-%s-%f' % (args.mode, args.encoder, args.decoder, args.beta)
-fname = "../models/fitmodel-%s.h5"%sfx
-print("saving to %s"%fname)
-model.save_weights(fname)
-
-savedhistfname="../models/savedhist-%s.dat"%sfx
-with open(savedhistfname, 'wb') as f:
-    pickle.dump({'args':arg_dict, 'history':hist,  'endlogs': logs}, f)
-    print('updated', savedhistfname)
+#sfx = '%s-%s-%s-%f' % (args.mode, args.encoder, args.decoder, args.beta)
+#fname = "../models/fitmodel-%s.h5"%sfx
+#print("saving to %s"%fname)
+#model.save_weights(fname)
+#
+#savedhistfname="../models/savedhist-%s.dat"%sfx
+#with open(savedhistfname, 'wb') as f:
+#    pickle.dump({'args':arg_dict, 'history':hist,  'endlogs': logs}, f)
+#    print('updated', savedhistfname)
 
